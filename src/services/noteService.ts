@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { Note, NewNoteData } from "../types/note";
 
-//TYPES
+// TYPES
 interface FetchNotesResponse {
   notes: Note[];
   totalPages: number;
@@ -13,21 +13,26 @@ interface FetchNotesParams {
   perPage?: number;
 }
 
-//TOKEN CHECK
+// TOKEN
 const NOTEHUB_TOKEN = import.meta.env.VITE_NOTEHUB_TOKEN;
-if (!NOTEHUB_TOKEN) {
-  throw new Error("TOKEN IS MISSING");
-}
+console.log("🔑 NOTEHUB_TOKEN:", NOTEHUB_TOKEN);
 
-//AXIOS DEFAULTS
+// AXIOS INSTANCE (без токена тут)
 const axiosInstance = axios.create({
   baseURL: "https://notehub-public.goit.study/api",
-  headers: {
-    Authorization: `Bearer ${NOTEHUB_TOKEN}`,
-  },
 });
 
-//GET
+// Додаємо токен до кожного запиту через інтерцептор
+axiosInstance.interceptors.request.use((config) => {
+  if (NOTEHUB_TOKEN) {
+    config.headers.Authorization = `Bearer ${NOTEHUB_TOKEN}`;
+  } else {
+    console.warn("⚠️ NOTEHUB_TOKEN is missing");
+  }
+  return config;
+});
+
+// GET
 export async function fetchNotes(
   query: string,
   page: number
@@ -44,13 +49,13 @@ export async function fetchNotes(
   return response.data;
 }
 
-//POST
+// POST
 export async function createNote(newNote: NewNoteData): Promise<Note> {
   const response = await axiosInstance.post<Note>("/notes", newNote);
   return response.data;
 }
 
-//DELETE
+// DELETE
 export async function deleteNote(noteId: number): Promise<Note> {
   const response = await axiosInstance.delete<Note>(`/notes/${noteId}`);
   return response.data;
